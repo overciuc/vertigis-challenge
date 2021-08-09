@@ -1,0 +1,145 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>VertiGIS Homework</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: rgba(15, 15, 15, 1);
+      }
+      .esri-ui-corner .esri-component.esri-widget--panel {
+        width: 230px !important;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.20/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.20/"></script>
+
+    <script>
+      require([
+        'esri/config',
+        'esri/Map',
+        'esri/views/MapView',
+        'esri/layers/FeatureLayer',
+        'esri/symbols/SimpleMarkerSymbol',
+        'esri/renderers/SimpleRenderer',
+        'esri/rest/support/Query',
+        'esri/Graphic',
+        'esri/layers/GraphicsLayer',
+      ], (
+        esriConfig,
+        Map,
+        MapView,
+        FeatureLayer,
+        SimpleMarkerSymbol,
+        SimpleRenderer,
+        Query,
+        Graphic,
+        GraphicsLayer,
+      ) => {
+        esriConfig.apiKey =
+          'AAPK5c38f144d07144689015be82300ce475Oi9ss_thrmq00Be2GUOm6jcQknIcP-HMksFjDdqgtnIFe6HBktBRVVWKM--hoAuz';
+
+        // TASK 3: Change symbology of the CSV layer
+        const marker = new SimpleRenderer({
+          symbol: new SimpleMarkerSymbol({
+            size: 4,
+            color: [0, 255, 255],
+            outline: null,
+          }),
+        });
+
+        // TASK 2: Load the CSV Data into a map layer. Add feature layer with data from CSV provided
+        const homeworkMarkers = new FeatureLayer({
+          url: 'https://services3.arcgis.com/fftS8yrWqmXL8e3A/arcgis/rest/services/homework_data/FeatureServer/0',
+          renderer: marker,
+        });
+
+        // TASK 1: create a simple 2D map with the “gray-vector”
+        const map = new Map({
+          basemap: 'gray-vector',
+          layers: homeworkMarkers,
+        });
+
+        const view = new MapView({
+          container: 'viewDiv',
+          center: [11.398686, 49.105202],
+          zoom: 4,
+          map: map,
+          constraints: {
+            snapToZoom: false,
+          },
+        });
+
+        map.add(homeworkMarkers);
+
+        // TASK 4: Find a way to query data from your layer and log the results to the console.
+        // When querying filter the data to only contain specific values of the “CODE” field in your data.
+        const query = homeworkMarkers.createQuery();
+        query.where = "CODE = 'DE' or CODE = 'AT'";
+        query.outFields = ['CODE', 'RECHTSWERT', 'HOCHWERT'];
+
+        const austriaPoints = [];
+
+        homeworkMarkers.queryFeatures(query).then(function (featureSet) {
+          const features = featureSet.features;
+          const attributeData = features.map((feature) => {
+            console.log(feature.attributes.CODE);
+            // BONUS TASK: Collect all points for a country of your choice, create a polyline from the
+            // points and add it to the map. NOT FINISHED!!!
+            if (feature.attributes.CODE === 'AT') {
+              austriaPoints.push([
+                feature.attributes.RECHTSWERT,
+                feature.attributes.HOCHWERT,
+              ]);
+            }
+          });
+          console.log(austriaPoints);
+        });
+
+        const graphicsLayer = new GraphicsLayer();
+        map.add(graphicsLayer);
+
+        const simpleLineSymbol = {
+          type: 'simple-line',
+          color: [226, 119, 40],
+          width: 5,
+        };
+
+        const polyline = {
+          type: 'polyline',
+          paths: austriaPoints /*[
+            [16.7138, 47.54388],
+            [15.0286, 49.018745],
+            [16.50486334, 47.00676419],
+            [12.73694505, 47.68270919],
+            [13.10013611, 47.64291812],
+          ]*/,
+        };
+
+        const polylineGraphic = new Graphic({
+          geometry: polyline,
+          symbol: simpleLineSymbol,
+        });
+
+        graphicsLayer.add(polylineGraphic);
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
